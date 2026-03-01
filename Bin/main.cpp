@@ -156,6 +156,32 @@
         return total;
     }
 
+    void extract_text(const fs::path& pdf_path, ostream& out) {
+        auto doc = unique_ptr<poppler::document>(
+        poppler::document::load_from_file(pdf_path.string())
+        );
+
+        if (!doc) {
+            cerr << "  [ERRORE] Impossibile aprire: " << pdf_path.filename() << "\n";
+            return;
+        }
+
+        int n_pages = doc->pages();
+
+        print_separator(out, '-', 72);
+        out << "File  : " << pdf_path.filename().string() << "\n";
+        out << "Pagine: " << n_pages << "\n";
+        print_separator(out, '-', 72);
+
+        for (int i = 0; i < n_pages; ++i) {
+        auto page = unique_ptr<poppler::page>(doc->create_page(i));
+        if (!page) continue;
+
+        poppler::ustring text = page->text();
+        out << text.to_latin1() << "\n";
+        }
+    }
+
     bool promptYesNo(string text) {
         bool YesNo = false;
         string value;
@@ -247,6 +273,7 @@
             cout << "*******************************\n";
             cout << " 1 - Visualizza PDF.\n";
             cout << " 2 - Misura lunghezza totale.\n";
+            cout << " 3 - estrapola il testo di un pdf.\n";
             cout << " 4 - Esci.\n";
             cout << " Seleziona opzione e premi invio: ";
 
@@ -305,7 +332,13 @@
         else
         break;
     }                
-
+    case 3:
+        for (const auto& path : pdf_files) {
+            extract_text(path, cout);
+            extract_text(path, out);
+        }
+        cout << "\nRisultati salvati in: " << output_file.string() << "\n";
+        break;
     case 4:
         return 1;
 
