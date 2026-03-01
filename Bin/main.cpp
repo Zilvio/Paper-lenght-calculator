@@ -1,23 +1,7 @@
-    /**
-     * main.cpp
-     * Author: stdf
-     *
-     * Legge tutti i PDF dalla cartella "input" e scrive le dimensioni
-     * di ogni pagina in un file di testo nella cartella "output".
-     *
-     * Struttura attesa:
-     *   MisuraTavole/
-     *       main.exe
-     *       input/      <-- metti qui i PDF
-     *       output/     <-- il risultato viene scritto qui
-     *
-     * Compilazione (MSYS2 MinGW x64):
-     *   g++ -std=c++17 main.cpp -o main.exe $(pkg-config --cflags --libs poppler-cpp)
-     */
-
     #include <poppler/cpp/poppler-document.h>
     #include <poppler/cpp/poppler-page.h>
-
+    #include <windows.h>
+    #include <shobjidl.h>
     #include <filesystem>
     #include <iostream>
     #include <fstream>
@@ -203,6 +187,58 @@
         return YesNo;
     }
 
+    vector<fs::path> open_file_dialog() {
+        vector<fs::path> selected_files;
+
+        CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+        IFileOpenDialog* pFileOpen = nullptr;
+        HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+                                    IID_IFileOpenDialog, (void**)&pFileOpen);
+
+        if (SUCCEEDED(hr)) {
+            DWORD dwOptions;
+            pFileOpen->GetOptions(&dwOptions);
+            pFileOpen->SetOptions(dwOptions | FOS_ALLOWMULTISELECT);
+
+            COMDLG_FILTERSPEC filter[] = {
+                { L"PDF Files", L"*.pdf" },
+                { L"All Files", L"*.*" }
+            };
+            pFileOpen->SetFileTypes(2, filter);
+
+            hr = pFileOpen->Show(NULL);
+
+            if (SUCCEEDED(hr)) {
+                IShellItemArray* pItems = nullptr;
+                hr = pFileOpen->GetResults(&pItems);
+
+                if (SUCCEEDED(hr)) {
+                    DWORD count;
+                    pItems->GetCount(&count);
+
+                    for (DWORD i = 0; i < count; i++) {
+                        IShellItem* pItem = nullptr;
+                        pItems->GetItemAt(i, &pItem);
+
+                        PWSTR pszFilePath = nullptr;
+                        pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                        selected_files.push_back(fs::path(pszFilePath));
+
+                        CoTaskMemFree(pszFilePath);
+                        pItem->Release();
+                    }
+                    pItems->Release();
+                }
+            }
+            pFileOpen->Release();
+        }
+
+        CoUninitialize();
+        return selected_files;
+    }
+
 
     int main(int argc, char* argv[]) {
         // Risale di un livello rispetto all'exe per trovare input e output
@@ -271,10 +307,11 @@
 
         while (choicedone != false){
             cout << "*******************************\n";
-            cout << " 1 - Visualizza PDF.\n";
-            cout << " 2 - Misura lunghezza totale.\n";
-            cout << " 3 - estrapola il testo di un pdf.\n";
-            cout << " 4 - Esci.\n";
+            cout << " 1 - Seleziona i PDF per l'operazione. \n";
+            cout << " 2 - Visualizza PDF.\n";
+            cout << " 3 - Misura lunghezza totale.\n";
+            cout << " 4 - Estrapola il testo di un pdf.\n";
+            cout << " 5 - Esci.\n";
             cout << " Seleziona opzione e premi invio: ";
 
             cin >> choice;
@@ -282,7 +319,20 @@
 
     switch (choice)
     {
-    case 1:
+    case 1:{
+        vector<fs::path> selected = open_file_dialog();
+            if (selected.empty()) {
+                cout << "Nessun file selezionato.\n";
+                }
+            else {
+                pdf_files = selected;
+                cout << pdf_files.size() << " file selezionati.\n";
+                for (const auto& p : pdf_files)
+                cout << "  " << p.filename().string() << "\n";    
+            }       
+        break;
+    }
+    case 2:
         for (const auto& path : pdf_files) {
             analyze_pdf(path, cout);
             analyze_pdf(path, out);
@@ -290,7 +340,7 @@
         cout << "\nRisultati salvati in: " << output_file.string() << "\n";
         break;
 
-    case 2:
+    case 3:
     {
         double threshold = 0.0;
         int t_choice = 0;
@@ -332,14 +382,14 @@
         else
         break;
     }                
-    case 3:
+    case 4:
         for (const auto& path : pdf_files) {
             extract_text(path, cout);
             extract_text(path, out);
         }
         cout << "\nRisultati salvati in: " << output_file.string() << "\n";
         break;
-    case 4:
+    case 5:
         return 1;
 
     default:
