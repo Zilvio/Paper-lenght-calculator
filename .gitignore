@@ -1,0 +1,17 @@
+bin/
+
+poppler/
+
+# Input/Output
+input/*
+output/*
+!input/.gitkeep
+!output/.gitkeep
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+x64/
+Debug/
+Release/
