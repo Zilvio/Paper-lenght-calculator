@@ -12,3 +12,6 @@ To compile and generate the executable, copy this line inside the MYSYS terminal
 ```
 g++ -std=c++17 main.cpp -o main.exe $(pkg-config --cflags --libs poppler-cpp)
 ```
+
+# HOW TO
+Simply run the program after inserting in the `input` folder all of the PDF files to analyze; a txt file containing the measurements will be saved inside the `output` folder, but the results can also be visualized through the terminal.
