@@ -156,6 +156,27 @@
         return total;
     }
 
+    bool promptYesNo(string text) {
+        bool YesNo = false;
+        string value;
+
+        do {
+            cout << text << endl;
+            cout << "Y si, N no:" << endl;
+            cin >> value;
+
+            // Conversion to lowercase
+            for (int i=0; i < value.length(); i++) value[i] = tolower(value[i]);
+
+            // Check values
+            if  (value == "yes") value = "y";
+            if  (value == "no") value = "n";
+            if  (value == "y") YesNo = true;
+            if  (value == "n") YesNo = false;
+        }   while (value != "y" && value != "n");
+        return YesNo;
+    }
+
 
     int main(int argc, char* argv[]) {
         // Risale di un livello rispetto all'exe per trovare input e output
@@ -243,9 +264,11 @@
         break;
 
     case 2:
-    {                   // <-- graffa di apertura subito dopo il case
+    {
         double threshold = 0.0;
         int t_choice = 0;
+        float price = 0;
+        float m_lenght = 0;
 
         cout << "\nSeleziona la soglia:\n";
         cout << " 1 - 900mm\n";
@@ -269,12 +292,22 @@
         cout << "\nSoglia: " << threshold << "mm\n";
         cout << "Lunghezza totale: " << total << "mm ("
             << total / 10.0 << "cm)\n";
+        bool status = promptYesNo("Vuoi calcolare anche il costo al metro di questo ordine?\n");
+
+        if (status){
+            cout << "Inserire il prezzo al metro della carta.\n";
+            cin >> price;
+            m_lenght = total / 1000;
+            price = price * m_lenght;
+            cout << "il prezzo totale della stampa di questi file e' di:" << price << " Euro.\n";
+            break;
+        }
+        else
         break;
-    }                   // <-- graffa di chiusura prima del case successivo
+    }                
 
     case 4:
-        choicedone = true;
-        break;
+        return 1;
 
     default:
         cout << "Selezione invalida. Riprova.\n";
